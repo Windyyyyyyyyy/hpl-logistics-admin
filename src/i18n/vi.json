@@ -1,0 +1,19 @@
+{
+    "admin" : "Quản trị viên",
+    "side_bar_name" : "HPL Logistics",
+    "language": {
+        "en": "Tiếng Anh",
+        "vi": "Tiếng Việt"
+    },
+    "side_bar" : {
+        "dashboard": "Bảng Điều Khiển",
+        "logout": "Đăng xuất"
+    },
+    "upload_file" : "Tải lên tệp",
+    "upload_file_desc" : "Tải lên tệp có định dạng .xlsx, .xls hoặc .csv",
+    "select_file" : "Chọn tệp",
+    "already_uploaded_1" : "(Bạn đã tải lên tệp",
+    "already_uploaded_2" : ", vì vậy bạn có thể mở lại nó mà không cần phải tải lên lại.)",
+    "view_uploaded_file" : "Mở tệp",
+    "spread_sheet_view" : "Xem bảng tính"
+}

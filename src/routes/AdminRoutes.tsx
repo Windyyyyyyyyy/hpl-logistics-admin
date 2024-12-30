@@ -1,11 +1,17 @@
-import { RouteObject } from "react-router";
-import AdminLayout from "../layout";
+import { RouteObject } from 'react-router';
+import AdminLayout from '../layout/index';
+import ImportExcel from '../pages/ImportExcel';
 
 const AdminRoutes: Array<RouteObject> = [
   {
-    path: "/",
+    path: '/admin',
     element: <AdminLayout />,
-    children: [ ],
+    children: [
+      {
+        index: true,
+        element: <ImportExcel />,
+      },
+    ],
   },
 ];
 

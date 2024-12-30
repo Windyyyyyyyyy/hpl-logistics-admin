@@ -1,0 +1,19 @@
+{
+    "admin" : "Admin",
+    "side_bar_name" : "HPL Logistics",
+    "language": {
+        "en": "English",
+        "vi": "Vietnamese"
+    },
+    "side_bar" : {
+        "dashboard" : "Dashboard Import",
+        "logout" : "Logout"
+    },
+    "upload_file" : "Upload File",
+    "upload_file_desc" : "Upload .xlsx, .xls or .csv file",
+    "select_file" : "Select File",
+    "already_uploaded_1" : "(You have already imported",
+    "already_uploaded_2" :", so you can reopen it without needing to import it again.)",
+    "view_uploaded_file" : "View",
+    "spread_sheet_view" : "Spreadsheet View"
+}
