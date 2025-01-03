@@ -2,12 +2,17 @@ import React from 'react';
 import * as XLSX from 'xlsx';
 import Spreadsheet from "react-spreadsheet";
 import { useTranslation } from 'react-i18next';
+import { uploadDataToFirestore } from '../../thirdparty/Firebase/firebase';
+
 type Cell = {
     value: any;
 };
 
+const LOCAL_STORAGE_KEY = 'excelData';
+const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours
+
 function FileInput() {
-    const [data, setData] = React.useState<Cell[][]>([]);
+    const [data, setData] = React.useState<{ [key: string]: Cell[][] }>({});
     const [isOpen, setIsOpen] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
     const [sheets, setSheets] = React.useState<string[]>([]);
@@ -22,50 +27,98 @@ function FileInput() {
         console.log('Translation test:', t('upload_file'));
     }, []);
 
-
     const loadSheet = (workbook: XLSX.WorkBook, sheetName: string) => {
         const sheet = workbook.Sheets[sheetName];
         const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
 
         const formattedData = rawData.map((row) =>
             row.map((cell) => ({
-                value: cell ?? null
+                value: cell ?? ''
             }))
         );
 
-        setData(formattedData);
+        setData((prevData) => ({
+            ...prevData,
+            [sheetName]: formattedData
+        }));
         setCurrentSheet(sheetName);
     };
 
-
-    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-
-        setIsLoading(true);
+    const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const files = event.target.files;
+        if (!files) return;
+        const file = files[0];
         const reader = new FileReader();
 
-        reader.onload = (event) => {
-            if (!event.target) return;
-            const wb = XLSX.read(event.target.result, { type: 'binary' });
-            setWorkbook(wb); // Store workbook in state
-            const sheetNames = wb.SheetNames;
-            setSheets(sheetNames);
+        reader.onload = async (e) => {
+            try {
+                setIsLoading(true);
+                if (e.target && e.target.result) {
+                    const data = new Uint8Array(e.target.result as ArrayBuffer);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    setWorkbook(workbook);
+                    setSheets(workbook.SheetNames);
 
-            loadSheet(wb, sheetNames[0]);
-            setIsOpen(true);
-            setIsLoading(false);
-            setFileName(file.name);
+                    const allSheetsData: { [key: string]: any[] } = {};
+                    workbook.SheetNames.forEach((sheetName) => {
+                        const sheet = workbook.Sheets[sheetName];
+                        const jsonData = XLSX.utils.sheet_to_json(sheet); // Chuyển dữ liệu thành JSON
+                        allSheetsData[sheetName] = Array.isArray(jsonData) ? jsonData : [];
+                    });
+
+                    console.log(allSheetsData); // Xem dữ liệu JSON
+
+                    // Save JSON data to Firestore
+                    await uploadDataToFirestore(allSheetsData);
+
+                    // Cache data locally with timestamp
+                    const cacheData = {
+                        timestamp: Date.now(),
+                        data: allSheetsData
+                    };
+                    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(cacheData));
+
+                    // Load data into the table
+                    loadSheet(workbook, workbook.SheetNames[0]);
+                }
+            } catch (error) {
+                console.error('Error reading file:', error);
+            } finally {
+                setIsLoading(false);
+                setFileName(file.name);
+            }
         };
 
-        reader.readAsBinaryString(file);
+        reader.readAsArrayBuffer(file);
     };
 
+    // Load cached data on component mount
+    React.useEffect(() => {
+        const cachedData = localStorage.getItem(LOCAL_STORAGE_KEY);
+        if (cachedData) {
+            const { timestamp, data } = JSON.parse(cachedData);
+            if (Date.now() - timestamp < EXPIRATION_TIME) {
+                const formattedData = Object.keys(data).reduce((acc, sheetName) => {
+                    acc[sheetName] = Array.isArray(data[sheetName]) ? data[sheetName].map((row: any) =>
+                        Object.keys(row).map(key => ({
+                            value: row[key] ?? ''
+                        }))
+                    ) : [];
+                    return acc;
+                }, {} as { [key: string]: Cell[][] });
+                setData(formattedData);
+                setSheets(Object.keys(formattedData));
+                setCurrentSheet(Object.keys(formattedData)[0]);
+            } else {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+            }
+        }
+    }, []);
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
             <h1 className="text-[32px] font-bold text-gray-800 mb-6">{t('upload_file')}</h1>
-            {data.length > 0 && !isOpen && (
+            {data[currentSheet] && data[currentSheet].length > 0 && !isOpen && (
                 <>
                     <div className="mb-8">
                         <p className="text-gray-500 mb-4">{t('already_uploaded_1')} {fileName} {t('already_uploaded_2')}</p>
@@ -76,7 +129,6 @@ function FileInput() {
                             {t('view_uploaded_file')} {fileName}
                         </button>
                     </div>
-
                 </>
             )}
             <div className="border-2 border-dashed border-blue-200 rounded-lg p-8 bg-blue-50 flex flex-col items-center justify-center">
@@ -89,7 +141,7 @@ function FileInput() {
                         className="hidden"
                     />
                     <span className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
-                    {t('select_file')}
+                        {t('select_file')}
                     </span>
                 </label>
             </div>
@@ -99,7 +151,6 @@ function FileInput() {
                     <div className="animate-spin rounded-full h-40 w-40 border-t-2 border-b-2 border-blue-500"></div>
                 </div>
             )}
-
 
             {isOpen && (
                 <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center">
@@ -126,15 +177,18 @@ function FileInput() {
                                 ✕
                             </button>
                         </div>
+                        {/* data preview */}
                         <div className="h-[calc(90vh-6rem)] overflow-auto">
                             <Spreadsheet
-                                data={data}
+                                data={data[currentSheet]}
                                 darkMode={false}
                             />
                         </div>
                     </div>
                 </div>
             )}
+
+          
         </div>
     );
 }
