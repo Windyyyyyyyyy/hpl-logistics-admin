@@ -2,31 +2,30 @@ import React from 'react';
 import * as XLSX from 'xlsx';
 import Spreadsheet from "react-spreadsheet";
 import { useTranslation } from 'react-i18next';
-import { uploadDataToFirestore } from '../../thirdparty/Firebase/firebase';
+import { uploadDataToFirestore, fetchDataFromFirestore } from '../../thirdparty/Firebase/firebase';
 
-type Cell = {
+interface Cell {
     value: any;
-};
+}
+
+interface SheetData {
+    [key: string]: Cell[][];
+}
 
 const LOCAL_STORAGE_KEY = 'excelData';
 const EXPIRATION_TIME = 24 * 60 * 60 * 1000; // 24 hours
 
 function FileInput() {
-    const [data, setData] = React.useState<{ [key: string]: Cell[][] }>({});
+    const [data, setData] = React.useState<SheetData>({});
     const [isOpen, setIsOpen] = React.useState(false);
     const [isLoading, setIsLoading] = React.useState(false);
     const [sheets, setSheets] = React.useState<string[]>([]);
     const [currentSheet, setCurrentSheet] = React.useState<string>('');
     const [workbook, setWorkbook] = React.useState<XLSX.WorkBook | null>(null);
     const [fileName, setFileName] = React.useState<string>('');
-    const { t, i18n } = useTranslation();
+    const { t } = useTranslation();
 
-    React.useEffect(() => {
-        // Debug translation
-        console.log('Current language:', i18n.language);
-        console.log('Translation test:', t('upload_file'));
-    }, []);
-
+    console.log("data[currentSheet] ", currentSheet);
     const loadSheet = (workbook: XLSX.WorkBook, sheetName: string) => {
         const sheet = workbook.Sheets[sheetName];
         const rawData = XLSX.utils.sheet_to_json(sheet, { header: 1 }) as any[][];
@@ -43,7 +42,6 @@ function FileInput() {
         }));
         setCurrentSheet(sheetName);
     };
-
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
         if (!files) return;
@@ -92,7 +90,7 @@ function FileInput() {
         reader.readAsArrayBuffer(file);
     };
 
-    // Load cached data on component mount
+    // Load cached data or fetch from Firestore on component mount
     React.useEffect(() => {
         const cachedData = localStorage.getItem(LOCAL_STORAGE_KEY);
         if (cachedData) {
@@ -105,15 +103,39 @@ function FileInput() {
                         }))
                     ) : [];
                     return acc;
-                }, {} as { [key: string]: Cell[][] });
+                }, {} as SheetData);
                 setData(formattedData);
                 setSheets(Object.keys(formattedData));
                 setCurrentSheet(Object.keys(formattedData)[0]);
-            } else {
-                localStorage.removeItem(LOCAL_STORAGE_KEY);
             }
+        } else {
+            console.log("Fetching data from Firestore...");
+            fetchDataFromFirestore(["FCL", "LCL"])
+                .then((allSheetsData) => {
+                    // Transform data for Spreadsheet component
+                    const transformedData = Object.keys(allSheetsData).reduce((acc, sheetName) => {
+                        acc[sheetName] = allSheetsData[sheetName].map(row =>
+                            Object.values(row).map(value => ({
+                                value: value || ''
+                            }))
+                        );
+                        return acc;
+                    }, {} as SheetData);
+
+                    setData(transformedData);
+                    setSheets(Object.keys(transformedData));
+                    setCurrentSheet(Object.keys(transformedData)[0]);
+                    console.log("Successfully loaded data from Firestore");
+                })
+                .catch((error) => {
+                    console.error("Error loading data from Firestore:", error);
+                    setData({});
+                    setSheets([]);
+                    setCurrentSheet('');
+                });
         }
     }, []);
+
 
     return (
         <div className="p-6 max-w-4xl mx-auto">
@@ -160,7 +182,7 @@ function FileInput() {
                                 <h2 className="text-xl font-bold"> {t('spread_sheet_view')}</h2>
                                 <select
                                     value={currentSheet}
-                                    onChange={(e) => workbook && loadSheet(workbook, e.target.value)}
+                                    onChange={(e) => setCurrentSheet(e.target.value)}
                                     className="px-3 py-1 border rounded-md"
                                 >
                                     {sheets.map((sheet) => (
@@ -180,7 +202,7 @@ function FileInput() {
                         {/* data preview */}
                         <div className="h-[calc(90vh-6rem)] overflow-auto">
                             <Spreadsheet
-                                data={data[currentSheet]}
+                                data={data[currentSheet] || []}
                                 darkMode={false}
                             />
                         </div>
@@ -188,7 +210,7 @@ function FileInput() {
                 </div>
             )}
 
-          
+
         </div>
     );
 }

@@ -7,6 +7,7 @@
     },
     "side_bar" : {
         "dashboard": "Bảng Điều Khiển",
+        "messages": "Tin nhắn",
         "logout": "Đăng xuất"
     },
     "upload_file" : "Tải lên tệp",

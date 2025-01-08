@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, Home, ChevronLeft, ChevronRight, LogOut, X } from 'lucide-react';
+import { Menu, Home, ChevronLeft, ChevronRight, LogOut, X, MessageCircle } from 'lucide-react';
 import { Outlet } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 
@@ -9,7 +9,8 @@ export default function AdminLayout() {
   const { t, i18n } = useTranslation();
 
   const menuItems = [
-    { title: t('side_bar.dashboard'), icon: Home },
+    { title: t('side_bar.dashboard'), icon: Home, ref: '/admin' },
+    { title: t('side_bar.messages'), icon: MessageCircle, ref: '/admin/messages' },
   ];
 
   const Sidebar = ({ isMobile = false }) => (
@@ -54,7 +55,7 @@ export default function AdminLayout() {
           {menuItems.map((item, index) => (
             <a
               key={index}
-              href="#"
+              href={item.ref}
               className="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
             >
               <item.icon size={20} />

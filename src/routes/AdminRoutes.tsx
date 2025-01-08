@@ -1,6 +1,8 @@
 import { RouteObject } from 'react-router';
 import AdminLayout from '../layout/index';
 import ImportExcel from '../pages/ImportExcel';
+import Messages from '../pages/Messages';
+import MessageDetail from '../pages/Messages/messageDetail';
 
 const AdminRoutes: Array<RouteObject> = [
   {
@@ -11,6 +13,14 @@ const AdminRoutes: Array<RouteObject> = [
         index: true,
         element: <ImportExcel />,
       },
+      {
+        path: 'messages',
+        element: <Messages />,
+      },
+      {
+        path: 'messages/:id',
+        element: <MessageDetail />,
+      }
     ],
   },
 ];
