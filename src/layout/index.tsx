@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Menu, Home, ChevronLeft, ChevronRight, LogOut, X, MessageCircle } from 'lucide-react';
-import { Outlet } from 'react-router-dom';
+import { Outlet } from 'react-router';
 import { useTranslation } from 'react-i18next';
 
 export default function AdminLayout() {
@@ -9,22 +9,20 @@ export default function AdminLayout() {
   const { t, i18n } = useTranslation();
 
   const menuItems = [
-    { title: t('side_bar.dashboard'), icon: Home, ref: '/admin' },
-    { title: t('side_bar.messages'), icon: MessageCircle, ref: '/admin/messages' },
+    { title: t('side_bar.dashboard'), icon: Home, ref: '/' },
+    { title: t('side_bar.messages'), icon: MessageCircle, ref: '/messages' },
   ];
 
   const Sidebar = ({ isMobile = false }) => (
-    <div className={`
-      ${isMobile ? 'fixed inset-0 z-50 bg-gray-900/50' : 'hidden lg:block'}
-      ${!isMobile && (isSidebarCollapsed ? 'w-16' : 'w-64')}
-      min-h-screen
-    `}>
+    <div
+      className={` ${isMobile ? 'fixed inset-0 z-50 bg-gray-900/50' : 'hidden lg:block'} ${!isMobile && (isSidebarCollapsed ? 'w-16' : 'w-64')} min-h-screen`}
+    >
       {/* Mobile overlay close button */}
       {isMobile && (
         <div className="absolute right-4 top-4">
           <button
             onClick={() => setIsMobileMenuOpen(false)}
-            className="p-2 rounded-lg text-white hover:bg-gray-800"
+            className="rounded-lg p-2 text-white hover:bg-gray-800"
           >
             <X size={24} />
           </button>
@@ -32,18 +30,18 @@ export default function AdminLayout() {
       )}
 
       {/* Sidebar content */}
-      <div className={`
-        ${isMobile ? 'w-64 h-full' : 'w-full h-full'}
-        bg-gray-900 text-white flex flex-col
-      `}>
+      <div
+        className={` ${isMobile ? 'h-full w-64' : 'h-full w-full'} flex flex-col bg-gray-900 text-white`}
+      >
         {/* Logo area */}
-        <div className="h-16 flex items-center justify-between px-4">
-          {(!isSidebarCollapsed || isMobile) && <span className="text-xl font-bold">
-            {t('side_bar_name')}</span>}
+        <div className="flex h-16 items-center justify-between px-4">
+          {(!isSidebarCollapsed || isMobile) && (
+            <span className="text-xl font-bold">{t('side_bar_name')}</span>
+          )}
           {!isMobile && (
             <button
               onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="p-2 rounded-lg hover:bg-gray-800"
+              className="rounded-lg p-2 hover:bg-gray-800"
             >
               {isSidebarCollapsed ? <ChevronRight size={20} /> : <ChevronLeft size={20} />}
             </button>
@@ -56,7 +54,7 @@ export default function AdminLayout() {
             <a
               key={index}
               href={item.ref}
-              className="flex items-center px-4 py-3 text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+              className="flex items-center px-4 py-3 text-gray-300 transition-colors hover:bg-gray-800 hover:text-white"
             >
               <item.icon size={20} />
               {(!isSidebarCollapsed || isMobile) && <span className="ml-4">{item.title}</span>}
@@ -66,9 +64,11 @@ export default function AdminLayout() {
 
         {/* Logout button */}
         <div className="p-4">
-          <button className="flex items-center text-gray-300 hover:text-white transition-colors">
+          <button className="flex items-center text-gray-300 transition-colors hover:text-white">
             <LogOut size={20} />
-            {(!isSidebarCollapsed || isMobile) && <span className="ml-4">{t('side_bar.logout')}</span>}
+            {(!isSidebarCollapsed || isMobile) && (
+              <span className="ml-4">{t('side_bar.logout')}</span>
+            )}
           </button>
         </div>
       </div>
@@ -76,7 +76,7 @@ export default function AdminLayout() {
   );
 
   return (
-    <div className="min-h-screen flex bg-gray-100">
+    <div className="flex min-h-screen bg-gray-100">
       {/* Desktop Sidebar */}
       <Sidebar />
 
@@ -86,42 +86,47 @@ export default function AdminLayout() {
       {/* Main content area */}
       <div className="flex-1">
         {/* Top header */}
-        <header className="h-16 bg-white border-b flex items-center justify-between px-4 lg:px-6">
+        <header className="flex h-16 items-center justify-between border-b bg-white px-4 lg:px-6">
           <div className="flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(true)}
-              className="p-2 rounded-lg hover:bg-gray-100 lg:hidden"
+              className="rounded-lg p-2 hover:bg-gray-100 lg:hidden"
             >
               <Menu size={24} />
             </button>
-            <h1 className="text-lg sm:text-xl font-semibold ml-2 lg:ml-4">
+            <h1 className="ml-2 text-lg font-semibold sm:text-xl lg:ml-4">
               {t('side_bar.dashboard')}
             </h1>
           </div>
           <div className="flex items-center space-x-4">
             {/* Language Selector */}
-            <div className="relative group">
+            <div className="group flex items-center rounded-lg border border-gray-200 bg-gray-50 px-2 py-1.5 hover:bg-gray-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-blue-500 lg:px-3 lg:py-2">
               <select
                 onChange={(e) => i18n.changeLanguage(e.target.value)}
                 value={i18n.language}
-                className="appearance-none bg-gray-50 border border-gray-200 text-gray-700 
-                py-1.5 lg:py-2 
-                px-2 lg:px-3 
-                text-sm lg:text-base 
-                rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 
-                focus:border-transparent hover:bg-gray-100 transition-colors cursor-pointer"
-              > 
-                <option value="vi">
-                
-                  <span className="lg:ml-1">{t('language.vi')}</span>
+                className="cursor-pointer appearance-none text-sm text-gray-700 group-hover:bg-gray-100 lg:text-base"
+              >
+                <option value="vi" className="lg:ml-1">
+                  {t('language.vi')}
                 </option>
-                <option value="en">
-                  <span className="lg:ml-1">{t('language.en')}</span>
+                <option value="en" className="lg:ml-1">
+                  {t('language.en')}
                 </option>
               </select>
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
-                <svg className="w-4 h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+
+              <div className="pointer-events-none text-gray-500">
+                <svg
+                  className="h-4 w-4 lg:h-5 lg:w-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M19 9l-7 7-7-7"
+                  />
                 </svg>
               </div>
             </div>

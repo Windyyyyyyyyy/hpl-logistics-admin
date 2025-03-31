@@ -6,7 +6,7 @@ import MessageDetail from '../pages/Messages/messageDetail';
 
 const AdminRoutes: Array<RouteObject> = [
   {
-    path: '/admin',
+    path: '/',
     element: <AdminLayout />,
     children: [
       {
@@ -20,7 +20,7 @@ const AdminRoutes: Array<RouteObject> = [
       {
         path: 'messages/:id',
         element: <MessageDetail />,
-      }
+      },
     ],
   },
 ];
